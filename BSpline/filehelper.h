@@ -22,21 +22,23 @@ void readdata(vector<Vector3d> &points , const char* path) {
 
 void readSurdata(vector<vector<Vector3d>>& points, const char* path, int &u , int &v) {
 	std::ifstream file(path);
-	string line;
+	string head;
 	points.clear();
-	getline(file, line);
-	istringstream iss(line);
+	getline(file, head);
+	istringstream iss(head);
 	iss >> u >> v;
-	for (int i = 0; i < u; ++i) {
-		for (int k = 0; k < v; ++k) {
+	points.resize(u);
+	for (int i = 0; i < (int)u; ++i) {
+		for (int k = 0; k < (int)v; ++k) {
+			string line;
 			if(!getline(file,line))
 			{
 				fprintf(stderr, "data not enough\n");
 				exit(1);
 			}
-			istringstream iss(line);
+			istringstream is(line);
 			double x, y, z, w;
-			iss >> x >> y >> z >> w;
+			is >> x >> y >> z ;
 			points[i].push_back(Vector3d(x, y, z));
 		}
 	}

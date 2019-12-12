@@ -44,35 +44,6 @@ void mouseMotionCB(int x, int y) {
 void display(void) {
 	
 	glClear(GL_COLOR_BUFFER_BIT);
-	// 绘制世界坐标系
-	
-	// 在原点处，建立一个四面体，四个顶点分别位于三个轴上，和原点处。
-	//glEnable(GL_CULL_FACE);
-	//glCullFace(GL_BACK);
-	/*
-	glBegin(GL_TRIANGLES);
-	glColor3f(1, 0, 0);
-	glVertex3d(0, 1, 0);
-	glVertex3d(1, 0, 0);
-	glVertex3d(0, 0, 0);
-
-	glColor3f(0, 1, 0);
-	glVertex3d(1, 0, 0);
-	glVertex3d(0, 0, 2);
-	glVertex3d(0, 0, 0);
-
-	glColor3f(0, 0, 1);
-	glVertex3d(0, 0, 2);
-	glVertex3d(0, 1, 0);
-	glVertex3d(0, 0, 0);
-
-	glColor3f(1, 1, 0);
-	glVertex3d(1, 0, 0);
-	glVertex3d(0, 1, 0);
-	glVertex3d(0, 0, 2);
-	*/
-
-
 	glEnd();
 	displayB();
 	glFlush();
@@ -133,8 +104,8 @@ void init() {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	gluLookAt(
-		1, 0, 6,
-		0, 0, 0,
+		10, 27, 20,
+		10, 0, 10,
 		0, 0, 1);
 }
 int main(int argc, char** argv) {

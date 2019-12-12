@@ -18,7 +18,7 @@ struct {
 	vector<float> param_s, param_t;
 	vector <float> knot_U, knot_V;
 	vector<vector<Vector3d>> points;
-	vector<MatrixXd> P, D;
+	MatrixXd P, D, Q;
 	int n, m;
 	int p, q; // degree
 	int order_p, order_q; // order
@@ -88,16 +88,17 @@ float cal_N(Curve& cv, int i, int k, float t) {
 	return a + b;
 }
 
-double distance(Vector3d& v1, Vector3d& v2) {
+const double distance(const Vector3d& v1, const Vector3d& v2) {
 	return sqrt((v1(0) - v2(0)) * (v1(0) - v2(0)) + (v1(1) - v2(1)) * (v1(1) - v2(1)) + (v1(2) - v2(2)) * (v1(2) - v2(2)));
 }
 /*
 get parm t
 */
-void generatePram(vector<Vector3d> &points, vector<float> &param_t, int n, en_t type, int a, int b) {
+void generatePram(const vector<Vector3d>* p, vector<float>& param_t, int n, en_t type, int a, int b) {
 	param_t.clear();
 	double length = 0.0;
 	double ct = 0;
+	auto points = *p;
 	switch (type)
 	{
 	case UNIFORM_SPACED:
@@ -133,43 +134,45 @@ void generatePram(vector<Vector3d> &points, vector<float> &param_t, int n, en_t 
 /*
 	generate knot
 */
-void generateKnot(Curve& cv, en_knot type) {
-	cv.knot.clear();
+void generateKnot(vector<float>&knot, en_knot type, int n, int degree, 
+	const vector<float> &param_t) {
+	order = degree + 1;
+	knot.clear();
 	if (type == UNIVER) {
-		for (int i = 1; i <= cv.n + 1 + cv.order;++i) {
-			cv.knot.push_back((float)i / (cv.n + cv.order + 1));
+		for (int i = 1; i <= n + 1 + order;++i) {
+			knot.push_back((float)i / (n + order + 1));
 		}
 	}
 	else if (type == k_SPACED) {
-		for (int i = 0; i < cv.order;++i) {
-			cv.knot.push_back(0);
+		for (int i = 0; i < order;++i) {
+			knot.push_back(0);
 		}
-		for (int i = 1;i <= cv.n - cv.degree;++i) {
-			cv.knot.push_back((float)i / (cv.n - cv.degree + 1));
+		for (int i = 1;i <= n - degree;++i) {
+			knot.push_back((float)i / (n - degree + 1));
 		}
-		for (int i = 0; i < cv.order;++i) {
-			cv.knot.push_back(1);
+		for (int i = 0; i < order;++i) {
+			knot.push_back(1);
 		}
 	}
 	else if (type == AVERAGE) {
-		for (int i = 0; i < cv.order;++i) {
-			cv.knot.push_back(0);
+		for (int i = 0; i < order;++i) {
+			knot.push_back(0);
 		}
-		for (int j = 1; j <= cv.n - cv.degree;++j) {
+		for (int j = 1; j <= n - degree;++j) {
 			double avg = 0.0;
-			for (int i = j; i <= j + cv.degree - 1;++i) {
-				avg += cv.param_t[i];
+			for (int i = j; i <= j + degree - 1;++i) {
+				avg += param_t[i];
 			}
-			cv.knot.push_back(avg / cv.degree);
+			knot.push_back(avg / degree);
 		}
-		for (int i = 0; i < cv.order;++i) {
-			cv.knot.push_back(1);
+		for (int i = 0; i < order;++i) {
+			knot.push_back(1);
 		}
 	}
 	if (debug) {
-		cout << "KNOT: " << cv.knot.size();
-		for (int i = 0; i < cv.knot.size(); ++i) {
-			cout << cv.knot[i] << " ";
+		cout << "KNOT: " << knot.size();
+		for (int i = 0; i < knot.size(); ++i) {
+			cout << knot[i] << " ";
 		}
 		cout << endl;
 	}
@@ -216,12 +219,22 @@ void global_curve_interpolation() {
 		fprintf(stderr, "need degree +1 control points\n");
 		exit(1);
 	}
-	generatePram(curve.points, curve.param_t, curve.n, en_t::UNIFORM_SPACED, 0, 1);
+	generatePram(&curve.points, curve.param_t, curve.n, en_t::UNIFORM_SPACED, 0, 1);
 	cout << "n+1: " << curve.n + 1 << " degree " << curve.degree << endl;
-	generateKnot(curve, en_knot::k_SPACED);
+	generateKnot(curve.knot, en_knot::k_SPACED, curve.n, curve.degree,
+		curve.param_t);
 	evaluate(curve);
 }
 
+void inter_Q() {
+	auto s = surface;
+	s.Q.resize(s.m + 1, s.n + 1);
+	for (int d = 0;d < s.n;++d) { // column d
+		for (int i = 0; i < s.m;++i) {
+			
+		}
+	}
+}
 void globel_surface_interpolation() {
 	readSurdata(surface.points, "D:\\working\\master-homework\\BSpline\\Release\\surface_data.in",
 		surface.m, surface.n);
@@ -231,9 +244,18 @@ void globel_surface_interpolation() {
 		fprintf(stderr, "need degree +1 control points\n");
 		exit(1);
 	}
+	generatePram(nullptr, surface.param_s, surface.m, en_t::UNIFORM_SPACED, 0, 1);
+	generateKnot(surface.knot_U, en_knot::k_SPACED, surface.m, 
+		surface.p, surface.param_s);
+
+
+	generatePram(nullptr, surface.param_t, surface.n, en_t::UNIFORM_SPACED, 0, 1);
+	generateKnot(surface.knot_V, en_knot::k_SPACED, surface.n,
+		surface.q, surface.param_t);
 }
 void testcase() {
-	global_curve_interpolation();
+	//global_curve_interpolation();
+	globel_surface_interpolation();
 }
 void drawBspline(Curve& cv) {
 	glPointSize(4);
@@ -279,12 +301,27 @@ void displayB() {
 	glEnd();
 
 	glColor3f(1, 0, 1);
-	glBegin(GL_LINES);
-	for (int i = 1; i < cv.points.size(); ++i) {
-		glVertex3d(cv.points[i - 1](0), cv.points[i - 1](1), cv.points[i - 1](2));
-		glVertex3d(cv.points[i](0), cv.points[i](1), cv.points[i](2));
+	if (curve.points.size() > 0) {
+		glBegin(GL_LINES);
+		for (int i = 1; i < cv.points.size(); ++i) {
+			glVertex3d(cv.points[i - 1](0), cv.points[i - 1](1), cv.points[i - 1](2));
+			glVertex3d(cv.points[i](0), cv.points[i](1), cv.points[i](2));
+		}
+		glEnd();
+		drawBspline(cv);
 	}
-	glEnd();
-	drawBspline(cv);
+	else {
+		for (int k = 0; k <= surface.m; ++k) {
+			glBegin(GL_LINES);
+			auto points = surface.points[k];
+			for (int i = 1; i <= surface.n;++i) {
+				glVertex3d(points[i - 1](0), points[i - 1](1), points[i - 1](2));
+				glVertex3d(points[i](0), points[i](1), points[i](2));
+			}
+			glEnd();
+		}
+	}
+
+
 	glFlush();
 }
