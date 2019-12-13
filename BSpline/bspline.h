@@ -1,6 +1,10 @@
 #pragma once
 #include <vector>
+#ifndef _MSV_VER
+#include <Eigen/Dense>
+#else
 #include <eigen3/Eigen/Dense>
+#endif
 #include "filehelper.h"
 using namespace std;
 using namespace Eigen;
@@ -18,8 +22,8 @@ struct {
 	vector<float> param_s, param_t;
 	vector <float> knot_U, knot_V;
 	vector<vector<Vector3d>> points;
-  vector<vector<Vector3d>> Q;
-	MatrixXd P, D;
+	vector<vector<Vector3d>> Q, P;
+	MatrixXd D;
 	int n, m;
 	int p, q; // degree
 	int order_p, order_q; // order
@@ -98,9 +102,9 @@ void generatePram(const vector<Vector3d>* p, vector<float>& param_t, int n, en_t
 	param_t.clear();
 	double length = 0.0;
 	double ct = 0;
-  vector<Vector3d> points;
-  if(p!=nullptr)
-    points = *p;
+	vector<Vector3d> points;
+	if (p != nullptr)
+		points = *p;
 	switch (type)
 	{
 	case UNIFORM_SPACED:
@@ -136,8 +140,8 @@ void generatePram(const vector<Vector3d>* p, vector<float>& param_t, int n, en_t
 /*
 	generate knot
 */
-void generateKnot(vector<float>&knot, en_knot type, int n, int degree, 
-	const vector<float> &param_t) {
+void generateKnot(vector<float>& knot, en_knot type, int n, int degree,
+	const vector<float>& param_t) {
 	int order = degree + 1;
 	knot.clear();
 	if (type == UNIVER) {
@@ -189,30 +193,30 @@ void drawPoly(int i, int k, float t) {
 	fprintf(stderr, "%f ", cal_N(curve.knot, i, k, t));
 	fprintf(stderr, "\n");
 }
-void calColpoints(vector<Vector3d> &points, int order, vector<float > & knot, vector<float > & param, int n, MatrixXd &P) {
-  MatrixXd N(n + 1, n + 1);
-  for (int i = 0; i <= n; ++i) {
-    for (int j = 0; j <= n; ++j) {
-      N(i, j) = cal_N(knot, j, order, param[i]);
-    }
-  }
-  N(n, n) = 1;
-  //cout << "N: " << endl;
-  //cout << N << endl;
-  MatrixXd D(n+1, 3);
-  for (int i = 0; i <= n; ++i) {
-    for (int j = 0; j < 3; ++j) {
-      D(i, j) = points[i](j);
-    }
-  }
-  //cout << "D: " << endl;
-  //cout << D << endl;
-  P.resize(n+1, 3);
-  P = N.inverse() * D;
-  //  cout << "P:1 " << endl;
-  //cout << P << endl;
-    curve.D = D;
-    curve.P = P;
+void calColpoints(vector<Vector3d>& points, int order, vector<float >& knot, vector<float >& param, int n, MatrixXd& P) {
+	MatrixXd N(n + 1, n + 1);
+	for (int i = 0; i <= n; ++i) {
+		for (int j = 0; j <= n; ++j) {
+			N(i, j) = cal_N(knot, j, order, param[i]);
+		}
+	}
+	N(n, n) = 1;
+	//cout << "N: " << endl;
+	//cout << N << endl;
+	MatrixXd D(n + 1, 3);
+	for (int i = 0; i <= n; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			D(i, j) = points[i](j);
+		}
+	}
+	//cout << "D: " << endl;
+	//cout << D << endl;
+	P.resize(n + 1, 3);
+	P = N.inverse() * D;
+	//  cout << "P:1 " << endl;
+	//cout << P << endl;
+	curve.D = D;
+	curve.P = P;
 }
 void evaluate(Curve& cv) {
 	MatrixXd N(cv.n + 1, cv.n + 1);
@@ -254,58 +258,69 @@ void global_curve_interpolation() {
 }
 
 void inter_Q() {
-	auto s = surface;
-  int m = s.m;
-  cout<<m;
-  MatrixXd N(m + 1, m + 1);
-  for (int i = 0; i <= m; ++i) {
-    for (int k = 0; k <= m; ++k) {
-      N(i, k) = cal_N(s.knot_U, k, s.order_p, s.param_s[i]);
-    }
-  }
-  N(s.m, s.m) = 1;
-  cout << "N is " << N << endl;
-  const int n = s.n;
-  s.Q.resize(n + 1);
-  MatrixXd D(m + 1, 3);
-  for (int i = 0; i <= n; ++i) {
-    vector<Vector3d> points;
-    for (int k = 0; k <= m; ++k) {
-      points.push_back(s.points[k][i]);
-      for (int c = 0; c < 3; ++c) {
-        D(k, c) = s.points[k][i](c);
-      }
-    }
-    MatrixXd Q(m + 1, 3);
-    calColpoints(points, s.order_p, s.knot_U, s.param_s, m, Q);
-    cout << Q << endl;
-    cout<<endl;
-    for (int k = 0; k <= m; ++k) {
-      s.Q[i].push_back(Vector3d(Q(k,0), Q(k,1), Q(k,2)));
-    }
-  }
+	auto& s = surface;
+	int row = surface.m, col = surface.n;
+	s.Q.resize(col + 1);
+	MatrixXd D(row + 1, 3);
+	for (int i = 0; i <= col; ++i) {
+		vector<Vector3d> points;
+		for (int k = 0; k <= row; ++k) {
+			points.push_back(s.points[k][i]);
+			for (int c = 0; c < 3; ++c) {
+				D(k, c) = s.points[k][i](c);
+			}
+		}
+		MatrixXd Q(row + 1, 3);
+		calColpoints(points, s.order_p, s.knot_U, s.param_s, row, Q); // for m;
+		//calColpoints(points, s.order_q, s.knot_V, s.param_t, row, Q); // for n;
+		//cout << Q << endl;
+		//cout << endl;
+		for (int k = 0; k <= row; ++k) {
+			s.Q[i].push_back(Vector3d(Q(k, 0), Q(k, 1), Q(k, 2)));
+		}
+	}
+
+	s.P.resize(row + 1);
+	for (int c = 0; c <= row; ++c) {
+		vector<Vector3d> points;
+		MatrixXd Q(col + 1, 3);
+		for (int k = 0;k <= col; ++k) {
+			auto p = s.Q[k][c];
+			points.push_back(p);
+			for (int i = 0; i < 3;++i) {
+				Q(k, i) = p(i);
+			}
+		}
+		MatrixXd P(col + 1, 3);
+		calColpoints(points, s.order_q, s.knot_V, s.param_t, col, P);
+		cout << P << endl;
+		cout << endl;
+		for (int k = 0; k <= col; ++k) {
+			s.P[c].push_back(Vector3d(P(k, 0), P(k, 1), P(k, 2)));
+		}
+	}
 }
 void globel_surface_interpolation() {
-  readSurdata(surface.points,
-              "/home/switch/work/master-homework/BSpline/Release/surface_data.in",
-              surface.m, surface.n);
-  surface.p = 2;
-  surface.q = 2;
-  surface.order_p = surface.p+1;
-  surface.order_q = surface.q + 1;
-  if (surface.m < surface.p || surface.n < surface.q) {
-    fprintf(stderr, "need degree +1 control points\n");
-    exit(1);
+	readSurdata(surface.points,
+		"D:\\working\\master-homework\\BSpline\\Release\\surface_data.in",
+		surface.m, surface.n);
+	surface.p = 2;
+	surface.q = 2;
+	surface.order_p = surface.p + 1;
+	surface.order_q = surface.q + 1;
+	if (surface.m < surface.p || surface.n < surface.q) {
+		fprintf(stderr, "need degree +1 control points\n");
+		exit(1);
 	}
 	generatePram(nullptr, surface.param_s, surface.m, en_t::UNIFORM_SPACED, 0, 1);
-	generateKnot(surface.knot_U, en_knot::k_SPACED, surface.m, 
+	generateKnot(surface.knot_U, en_knot::k_SPACED, surface.m,
 		surface.p, surface.param_s);
 
 
 	generatePram(nullptr, surface.param_t, surface.n, en_t::UNIFORM_SPACED, 0, 1);
 	generateKnot(surface.knot_V, en_knot::k_SPACED, surface.n,
 		surface.q, surface.param_t);
-  inter_Q();
+	inter_Q();
 }
 void testcase() {
 	//global_curve_interpolation();
@@ -366,6 +381,7 @@ void displayB() {
 	}
 	else {
 		for (int k = 0; k <= surface.m; ++k) {
+			glColor3f(0.2f, 0.2f, 0.2f);
 			glBegin(GL_LINES);
 			auto points = surface.points[k];
 			for (int i = 1; i <= surface.n;++i) {
@@ -374,20 +390,33 @@ void displayB() {
 			}
 			glEnd();
 		}
-    auto m = surface.m;
-    auto n = surface.n;
 
-    glPointSize(4);
-    glBegin(GL_POINTS);
-    auto points = surface.Q;
-    for (int i = 0; i <= m; ++i) {
-      for (int k = 0; k <= n; ++k) {
-        //glVertex3d(points[i][k](0), points[i][k](1), points[i][k](2));
+		for (int i = 0; i <= surface.n;++i) {
+			glColor3f(0.2f, 0.2f, 0.2f);
+			glBegin(GL_LINES);
+			for (int k = 1; k <= surface.m; ++k) {
+			auto p1 = surface.points[k];
+			auto p2 = surface.points[k - 1];
+			glVertex3d(p2[i](0), p2[i](1), p2[i](2));
+			glVertex3d(p1[i](0), p1[i](1), p1[i](2));
+			}
+			glEnd();
+		}
 
-      }
-    }
-    glEnd();
-        }
+		auto m = surface.m;
+		auto n = surface.n;
+
+		glPointSize(4);
+		glColor3f(1, 0, 0);
+		glBegin(GL_POINTS);
+		auto points = surface.Q;
+		for (auto pl : points) {
+			for (auto p : pl) {
+				glVertex3d(p(0), p(1), p(2));
+			}
+		}
+		glEnd();
+	}
 
 
 	glFlush();
