@@ -18,7 +18,7 @@ struct Curve {
 }curve;
 bool debug = 1;
 
-struct {
+struct Surface{
 	vector<float> param_s, param_t;
 	vector <float> knot_U, knot_V;
 	vector<vector<Vector3d>> points;
@@ -321,17 +321,58 @@ void globel_surface_interpolation() {
 	generateKnot(surface.knot_V, en_knot::k_SPACED, surface.n,
 		surface.q, surface.param_t);
 	inter_Q();
+
+}
+
+void global_curve_approximation() {
+	
 }
 void testcase() {
 	//global_curve_interpolation();
 	globel_surface_interpolation();
 }
-void drawBspline(Curve& cv) {
+void drawsurB(Surface& s) {
 	glPointSize(4);
 	glColor3f(0, 0, 1);
 	glBegin(GL_POINTS);
 	float step = 0.01f;
-
+	for (float u = 0.0; u <= 1.0; u += step) {
+		for (float v = 0.0; v <= 1.0; v += step) {
+			Vector3d ve(0, 0, 0);
+			for (int i = 0; i <= s.m ; ++i) {
+				for (int k = 0; k <= s.n ; ++k) {
+					ve += Vector3d(s.P[i][k]) * cal_N(s.knot_U, i, s.order_p, u) 
+						* cal_N(s.knot_V, k, s.order_q, v);
+				}
+			}
+			glVertex3f(ve(0), ve(1), ve(2));
+		}
+	}
+	glEnd();
+	glPointSize(10);
+	glColor3f(1, 0, 0);
+	glBegin(GL_POINTS);
+	for (int  i = 0; i <= s.m; i++) {
+		for (int k = 0; k <= s.n; ++k) {
+			glVertex3f(s.P[i][k](0), s.P[i][k](1), s.P[i][k](2));
+		}
+	}
+	glEnd();
+	glPointSize(10);
+	glColor3f(0, 1, 0);
+	glBegin(GL_POINTS);
+	for (int  i = 0; i <= s.m; i++) {
+		for (int k = 0; k <= s.n; ++k) {
+			glVertex3f(s.points[i][k](0), s.points[i][k](1), s.points[i][k](2));
+		}
+	}
+	glEnd();
+}
+void drawcuvB(Curve& cv) {
+	glPointSize(4);
+	glColor3f(0, 0, 1);
+	glBegin(GL_POINTS);
+	float step = 0.01f;
 	for (float t = 0.0; t <= 1.0; t += step) {
 		Vector3d v(0, 0, 0);
 		for (int i = 0; i < cv.n + 1; ++i) {
@@ -344,14 +385,14 @@ void drawBspline(Curve& cv) {
 	glPointSize(10);
 	glColor3f(1, 0, 0);
 	glBegin(GL_POINTS);
-	for (float t = 0; t <= cv.n; t++) {
+	for (int  t = 0; t <= cv.n; t++) {
 		glVertex3f(cv.D(t, 0), cv.D(t, 1), cv.D(t, 2));
 	}
 	glEnd();
 	glPointSize(10);
 	glColor3f(0, 1, 0);
 	glBegin(GL_POINTS);
-	for (float t = 0; t <= cv.n; t++) {
+	for (int t = 0; t <= cv.n; t++) {
 		glVertex3f(cv.P(t, 0), cv.P(t, 1), cv.P(t, 2));
 	}
 	glEnd();
@@ -377,7 +418,7 @@ void displayB() {
 			glVertex3d(cv.points[i](0), cv.points[i](1), cv.points[i](2));
 		}
 		glEnd();
-		drawBspline(cv);
+		drawcuvB(cv);
 	}
 	else {
 		for (int k = 0; k <= surface.m; ++k) {
@@ -416,8 +457,7 @@ void displayB() {
 			}
 		}
 		glEnd();
+		drawsurB(surface);
 	}
-
-
 	glFlush();
 }

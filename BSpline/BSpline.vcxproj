@@ -80,8 +80,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>D:\working\B-spline\BSpline\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\working\B-spline\BSpline\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\working\master-homework\BSpline\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\working\master-homework\BSpline\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
