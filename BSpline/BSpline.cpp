@@ -1,5 +1,9 @@
 ﻿#include <iostream>
+#ifndef _MSC_VER
+#include "GL/glut.h"
+#else
 #include "glut.h"
+#endif
 #include "bspline.h"
 
 bool mouseLeftDown, mouseRightDown;

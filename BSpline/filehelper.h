@@ -1,6 +1,5 @@
 #pragma once
 #include <vector>
-#include  <vec.h>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -37,7 +36,7 @@ void readSurdata(vector<vector<Vector3d>>& points, const char* path, int &u , in
 				exit(1);
 			}
 			istringstream is(line);
-			double x, y, z, w;
+			double x, y, z;
 			is >> x >> y >> z ;
 			points[i].push_back(Vector3d(x, y, z));
 		}
