@@ -326,7 +326,7 @@ void global_curve_approximation() {
     exit(2);
   }
   generatePram(&curve.points, curve.param_t, curve.n, en_t::UNIFORM_SPACED, 0, 1);
-  generateKnot(curve.knot, en_knot::k_SPACED, curve.n, curve.degree, curve.param_t);
+  generateKnot(curve.knot, en_knot::k_SPACED, curve.h, curve.degree, curve.param_t); // knot size h + 1
   curve_approximation(curve);
 }
 void global_curve_interpolation() {
