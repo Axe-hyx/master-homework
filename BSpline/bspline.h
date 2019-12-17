@@ -15,9 +15,11 @@ struct Curve {
 	int n, degree, order;
 	vector<Vector3d> points;
 	MatrixXd P, D;
+  int h; // control points in apporiximation
 }curve;
 bool debug = 1;
 
+int command = 2;
 struct Surface{
 	vector<float> param_s, param_t;
 	vector <float> knot_U, knot_V;
@@ -73,6 +75,7 @@ float cal_N(vector<float>& knot, int i, int k, float t) {
 			return 0.0;
 		}
 	}
+    assert(i+k < knot.size());
 	float lfrac = (knot[i + k - 1] - knot[i]);
 	float rfrac = (knot[i + k] - knot[i + 1]);
 	float a = 0.0f, b = 0.0f;
@@ -176,7 +179,7 @@ void generateKnot(vector<float>& knot, en_knot type, int n, int degree,
 		}
 	}
 	if (debug) {
-		cout << "KNOT: " << knot.size();
+		cout << "KNOT: (" << knot.size()<<"):";
 		for (size_t i = 0; i < knot.size(); ++i) {
 			cout << knot[i] << " ";
 		}
@@ -241,14 +244,101 @@ void evaluate(Curve& cv) {
 	cout << "P: " << endl;
 	cout << cv.P << endl;
 }
+void surface_approximation(Curve &cv) {
+  
+}
+void curve_approximation(Curve &cv) {
+  MatrixXd Pd(cv.h-1, 3);
+  MatrixXd Qk(cv.n-1, 3);
+  MatrixXd D(cv.n+1, 3);
+  for(int i = 0; i < cv.n + 1; ++i) {
+    for(int k = 0; k < 3; ++k) {
+      D(i,k) = cv.points[i](k);
+    }
+  }
+  cout<<"D: "<<endl;
+  cout<<D<<endl;
+  MatrixXd P(cv.h + 1, 3);
+  for (int k = 0; k < 3; ++k) {
+    P(0, k) = D(0,k);
+    P(cv.h, k) = D(cv.n, k);
+  }
+  cout<<"P："<<endl;
+  cout<<P<<endl;
+  cout<<cv.n<<" "<<cv.h<<endl;
+  for (int k = 1; k < cv.n; ++k) {
+    for(int i = 0; i<3; ++i){
+      Qk(k-1,i) = D(k,i)
+      - cal_N(cv.knot, 0, cv.order, cv.param_t[k]) * P(0,i)
+          - cal_N(cv.knot, cv.h, cv.order, cv.param_t[k]) * P(cv.h, i);
+    }
+  }
+  cout << "Qk：" << endl;
+  cout<<Qk<<endl;
+  MatrixXd Q(cv.h - 1, 3);
+  for (int i = 0; i < cv.h-1; ++i) {
+    for (int k = 0; k < 3; ++k) {
+      double sum = 0.0f;
+      for (int j = 1; j < cv.n; ++j) {
+        sum += cal_N(cv.knot, i, cv.order, cv.param_t[j]) * Qk(j-1, k);
+      }
+      Q(i,k) = sum;
+    }
+  }
+  cout<<"Q: "<<endl;
+  cout<<Q<<endl;
+  MatrixXd N(cv.n - 1, cv.h - 1);
+  for (int k = 1; k < cv.n; ++k) {
+    for (int i = 0; i < cv.h-1; ++i) {
+      N(k-1,i) = cal_N(cv.knot, i+1, cv.order, cv.param_t[k]);
+    }
+  }
+  cout << "N: " << endl;
+  cout << N << endl;
+  MatrixXd M = N.transpose()*N;
+  cout << "M: " << endl;
+  cout << M<< endl;
+  Pd = M.inverse() * Q;
+  for (int i = 1; i < cv.h; ++i) {
+    for (int k = 0; k < 3; ++k) {
+      P(i, k ) = Pd(i-1, k);
+    }
+  }
+  cout << "P: " << endl;
+  cout << P << endl;
+  cv.D = D;
+  cv.P = P;
+}
+void global_curve_approximation() {
+  command = 2;
+  readdata(curve.points,
+           "/home/switch/work/master-homework/BSpline/Release/curve_data.in");
+  curve.n = curve.points.size() - 1;
+  curve.degree = 2; // degree p
+  curve.order = curve.degree + 1;
+  curve.h = curve.n-1;
+  if (curve.h >= curve.n) {
+    fprintf(stderr, "ERROR: n > h\n");
+    exit(1);
+  }
+  if (curve.h < curve.degree) {
+    fprintf(stderr, "h%d %dERROR: h >= p\n", curve.h, curve.degree);
+    exit(2);
+  }
+  generatePram(&curve.points, curve.param_t, curve.n, en_t::UNIFORM_SPACED, 0, 1);
+  generateKnot(curve.knot, en_knot::k_SPACED, curve.n, curve.degree, curve.param_t);
+  curve_approximation(curve);
+}
 void global_curve_interpolation() {
-	readdata(curve.points, "D:\\working\\master-homework\\BSpline\\Release\\curve_data.in");
-	curve.n = curve.points.size() - 1;
-	curve.degree = 3;
-	curve.order = curve.degree + 1;
-	if (curve.n < curve.degree) {
-		fprintf(stderr, "need degree +1 control points\n");
-		exit(1);
+  command = 1;
+  readdata(curve.points,
+           "/home/switch/work/master-homework/BSpline/Release/curve_data.in");
+  curve.n = curve.points.size() - 1;
+  curve.degree = 3; // degree p;
+  curve.order = curve.degree + 1;
+  if (curve.n < curve.degree) {
+    fprintf(stderr, "need degree +1 control points\n");
+    exit(1);
 	}
 	generatePram(&curve.points, curve.param_t, curve.n, en_t::UNIFORM_SPACED, 0, 1);
 	cout << "n+1: " << curve.n + 1 << " degree " << curve.degree << endl;
@@ -301,16 +391,16 @@ void inter_Q() {
 	}
 }
 void globel_surface_interpolation() {
-	readSurdata(surface.points,
-		"D:\\working\\master-homework\\BSpline\\Release\\surface_data.in",
-		surface.m, surface.n);
-	surface.p = 2;
-	surface.q = 2;
-	surface.order_p = surface.p + 1;
-	surface.order_q = surface.q + 1;
-	if (surface.m < surface.p || surface.n < surface.q) {
-		fprintf(stderr, "need degree +1 control points\n");
-		exit(1);
+  readSurdata(surface.points,
+              "/home/switch/work/master-homework/BSpline/Release/surface_data.in",
+              surface.m, surface.n);
+  surface.p = 2;
+  surface.q = 2;
+  surface.order_p = surface.p + 1;
+  surface.order_q = surface.q + 1;
+  if (surface.m < surface.p || surface.n < surface.q) {
+    fprintf(stderr, "need degree +1 control points\n");
+    exit(1);
 	}
 	generatePram(nullptr, surface.param_s, surface.m, en_t::UNIFORM_SPACED, 0, 1);
 	generateKnot(surface.knot_U, en_knot::k_SPACED, surface.m,
@@ -324,12 +414,10 @@ void globel_surface_interpolation() {
 
 }
 
-void global_curve_approximation() {
-	
-}
 void testcase() {
-	//global_curve_interpolation();
-	globel_surface_interpolation();
+  //global_curve_interpolation();
+	//globel_surface_interpolation();
+  global_curve_approximation();
 }
 void drawsurB(Surface& s) {
 	glPointSize(4);
@@ -367,6 +455,38 @@ void drawsurB(Surface& s) {
 		}
 	}
 	glEnd();
+}
+void drawcurB_app(Curve &cv) {
+    glPointSize(4);
+    glColor3f(0,0,1);
+    glBegin(GL_POINTS);
+    float step = 0.01f;
+    for (float t = 0.0; t <= 1.0f; t += step) {
+      Vector3d v(0,0,0);
+      for (int i = 0; i <= cv.h; ++i) {
+        if(i!=2 && i!= 0) continue;
+        v+= Vector3d(cv.P(i,0), cv.P(i,1), cv.P(i,2)) *
+          cal_N(cv.knot, i, cv.order, t);
+      }
+      glVertex3f(v(0), v(1), v(2));
+    }
+    glEnd();
+
+    glPointSize(10);
+    glColor3f(1, 0, 0);
+    glBegin(GL_POINTS);
+    for (int t = 0; t <= cv.n; t++) {
+      glVertex3f(cv.D(t, 0), cv.D(t, 1), cv.D(t, 2));
+    }
+    glEnd();
+
+    glPointSize(10);
+    glColor3f(0, 1, 0);
+    glBegin(GL_POINTS);
+    for (int t = 0; t <= cv.h; t++) {
+      glVertex3f(cv.P(t, 0), cv.P(t, 1), cv.P(t, 2));
+    }
+    glEnd();
 }
 void drawcuvB(Curve& cv) {
 	glPointSize(4);
@@ -418,7 +538,10 @@ void displayB() {
 			glVertex3d(cv.points[i](0), cv.points[i](1), cv.points[i](2));
 		}
 		glEnd();
-		drawcuvB(cv);
+    if(command ==1)
+      drawcuvB(cv);
+    else
+      drawcurB_app(cv);
 	}
 	else {
 		for (int k = 0; k <= surface.m; ++k) {
