@@ -14,7 +14,7 @@ void readdata(vector<Vector3d> &points , const char* path) {
 	while (getline(file, line)) {
 		istringstream iss(line);
 		double x, y, z, w;
-		iss >> x >> y >> z >> w;
+		iss >> x >> y >> z;
 		points.push_back(Vector3d(x, y, z));
 	}
 }
