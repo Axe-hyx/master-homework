@@ -339,7 +339,8 @@ void surface_approximation(Surface &s) {
     for (int k = 0; k <= s.f; ++k) {
       s.P[c].push_back(Vector3d(P(k, 0), P(k, 1), P(k, 2)));
     }
-    cout<<P<<endl;
+    cout << P << endl;
+    cout << endl;
   }
 }
 void global_curve_approximation() {
@@ -489,10 +490,10 @@ void globel_surface_interpolation() {
 }
 
 void testcase() {
-  // global_curve_interpolation();
-  // globel_surface_interpolation();
-   global_curve_approximation();
-  //global_surface_approximation();
+  //global_curve_interpolation();
+  //globel_surface_interpolation();
+  //global_curve_approximation();
+  global_surface_approximation();
 }
 void drawsurB(Surface &s) {
   float step = 0.01f;
@@ -505,17 +506,43 @@ void drawsurB(Surface &s) {
     n = s.f;
   }
   glPointSize(4);
-  glColor3f(0, 0, 1);
+  glColor3f(0, 1, 1);
   glBegin(GL_POINTS);
-  Vector3d ve(0, 0, 0);
-  for (int i = 0; i <= s.e; ++i) {
-    for (int k = 0; k <= s.f; ++k) {
-      for (float u = 0.0; u <= 1.0; u += step) {
-        for (float v = 0.0; v <= 1.0; v += step) {
-          ve = Vector3d(s.P[i][k]);
-          //ve += Vector3d(s.P[i][k]) * cal_N(s.knot_U, i, s.order_p,
-          //     u)
-          //          * cal_N(s.knot_V, k, s.order_q, v);
+
+  /*
+  for (float u = 0.0; u <= 1.0f; u += step) {
+    for (int k = 0; k <= s.e; ++k) {
+      Vector3d v(0, 0, 0);
+      for (int i = 0; i <= s.f; ++i) {
+        v += Vector3d(s.P[k][i](0), s.P[k][i](1), s.P[k][i](2)) *
+             cal_N(s.knot_U, i, s.order_p, u);
+      }
+      glVertex3f(v(0), v(1), v(2));
+    }
+  }
+  for (float u = 0.0; u <= 1.0f; u += step) {
+    for (int i = 0; i <= s.f; ++i) {
+      Vector3d v(0, 0, 0);
+      for (int k = 0; k <= s.e; ++k) {
+        v += Vector3d(s.P[k][i](0), s.P[k][i](1), s.P[k][i](2)) *
+             cal_N(s.knot_V, k, s.order_q, u);
+      }
+      glVertex3f(v(0), v(1), v(2));
+    }
+  }
+  */
+  glEnd();
+  glPointSize(4);
+  glColor3f(1, 1, 1);
+  glBegin(GL_POINTS);
+  for (float v = 0.0; v <= 1.0f; v += step) {
+    for (float u = 0.0; u <= 1.0f; u += step) {
+      Vector3d ve(0, 0, 0);
+      for (int k = 0; k <= m; ++k) {
+        for (int i = 0; i <= n; ++i) {
+          ve += Vector3d(s.P[k][i](0), s.P[k][i](1), s.P[k][i](2)) *
+                cal_N(s.knot_U, k, s.order_p, u) *
+                cal_N(s.knot_V, i, s.order_q, v);
         }
       }
       glVertex3f(ve(0), ve(1), ve(2));
@@ -525,11 +552,6 @@ void drawsurB(Surface &s) {
   glPointSize(10);
   glColor3f(1, 0, 0);
   glBegin(GL_POINTS);
-  for (int i = 0; i <= m; i++) {
-    for (int k = 0; k <= s.n; ++k) {
-      // glVertex3f(s.Q[i][k](0), s.Q[i][k](1), s.Q[i][k](2));
-    }
-  }
   glEnd();
 }
 void drawcurB_app(Curve &cv) {
@@ -656,7 +678,7 @@ void displayB() {
     }
     glEnd();
     glPointSize(10);
-    glColor3f(1, 0, 0);
+    glColor3f(1, 1, 0);
     glBegin(GL_POINTS);
     auto points = surface.P;
     int i = 0;
