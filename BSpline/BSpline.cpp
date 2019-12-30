@@ -112,6 +112,9 @@ void init() {
 		10, 0, 10,
 		0, 0, 1);
 }
+// TODO: 修改显示颜色， 开放测试接口
+// degree 测试接口 e f测试接口
+// 摄像机
 int main(int argc, char** argv) {
 	testcase();
 
